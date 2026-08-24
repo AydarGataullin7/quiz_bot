@@ -1,4 +1,5 @@
 import os
+import json
 
 questions_folder = r'D:\python_scripts\quiz_bot\questions'
 all_files = os.listdir(questions_folder)
@@ -33,3 +34,6 @@ for questions_file in all_files:
             i = j + 1
         else:
             i += 1
+
+with open('questions.json', 'w', encoding='utf-8') as f:
+    json.dump(all_questions, f, ensure_ascii=False, indent=2)
