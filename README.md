@@ -4,7 +4,7 @@ Telegram и VK боты для викторины с вопросами и от�
 
 ## Ссылки на ботов
 
-- **Telegram бот**: [Quiz bot](https://t.me/@muzey_quiz_bot)
+- **Telegram бот**: [Quiz bot](https://web.telegram.org/a/#8670933909)
 - **VK бот**: [Quiz bot ВКонтакте](https://vk.com/club241053209)
 
 
