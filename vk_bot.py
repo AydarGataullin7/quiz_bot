@@ -8,7 +8,7 @@ from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.utils import get_random_id
 
-def question(event, vk_api):
+def handle_message(event, vk_api):
     user_id = event.user_id
     user_text = event.text
     keyboard = VkKeyboard(one_time=True)
@@ -118,4 +118,4 @@ if __name__ == "__main__":
     longpoll = VkLongPoll(vk_session)
     for event in longpoll.listen():
         if event.type == VkEventType.MESSAGE_NEW and event.to_me:
-            question(event, vk_api)
+            handle_message(event, vk_api)

@@ -21,7 +21,7 @@ def start(update: Update, context: CallbackContext):
     update.message.reply_text("Привет! Я бот для викторины", reply_markup=reply_markup)
     return START
 
-def new_question(update: Update, context: CallbackContext):
+def handle_new_question(update: Update, context: CallbackContext):
     user_text = update.message.text
     if user_text in ['Сдаться', 'Мой счет']:
         update.message.reply_text('Нажмите "Новый вопрос" чтобы начать викторину')
@@ -38,10 +38,10 @@ def new_question(update: Update, context: CallbackContext):
     update.message.reply_text(question)
     return QUESTION
 
-def check_answer(update: Update, context: CallbackContext):
+def handle_answer(update: Update, context: CallbackContext):
     user_text = update.message.text
     if user_text == 'Новый вопрос':
-        return new_question(update, context)
+        return handle_new_question(update, context)
     user_id = update.effective_user.id
     saved_answer = r.get(f'user_{user_id}_answer')
     if not saved_answer:
@@ -53,14 +53,14 @@ def check_answer(update: Update, context: CallbackContext):
         update.message.reply_text('Неправильно... Попробуешь ещё раз?')
     return QUESTION
 
-def give_up(update: Update, context: CallbackContext):
+def handle_give_up(update: Update, context: CallbackContext):
     user_id = update.effective_user.id
     saved_answer = r.get(f'user_{user_id}_answer')
     if saved_answer:
         update.message.reply_text(f'Правильный ответ: {saved_answer}')
         r.delete(f'user_{user_id}_answer')
         update.message.text = 'Новый вопрос'
-        return new_question(update, context)
+        return handle_new_question(update, context)
     return QUESTION
 
 
@@ -91,11 +91,11 @@ def main():
         entry_points=[CommandHandler('start', start)],
         states={
             START: [
-                MessageHandler(Filters.regex('^Новый вопрос$'), new_question),
+                MessageHandler(Filters.regex('^Новый вопрос$'), handle_new_question),
             ],
             QUESTION: [
-                MessageHandler(Filters.regex('Сдаться'), give_up),
-                MessageHandler(Filters.text & ~Filters.command, check_answer),
+                MessageHandler(Filters.regex('Сдаться'), handle_give_up),
+                MessageHandler(Filters.text & ~Filters.command, handle_answer),
             ],
         },
         fallbacks=[CommandHandler('start', start)],
