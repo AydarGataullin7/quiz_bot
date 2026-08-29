@@ -15,27 +15,27 @@ def main():
 
         blocks = content.split('\n\n')
 
-        i = 0
-        while i < len(blocks):
-            block = blocks[i].strip()
+        block_index = 0
+        while block_index < len(blocks):
+            current_block = blocks[block_index].strip()
 
-            if block.startswith('Вопрос'):
-                question_text = block
+            if current_block.startswith('Вопрос'):
+                question_text = current_block
 
                 answer_text = None
-                j = i + 1
-                while j < len(blocks):
-                    if blocks[j].strip().startswith('Ответ'):
-                        answer_text = blocks[j].replace('Ответ:', '').strip()
+                answer_index = block_index + 1
+                while answer_index < len(blocks):
+                    if blocks[answer_index].strip().startswith('Ответ'):
+                        answer_text = blocks[answer_index].replace('Ответ:', '').strip()
                         break
-                    j += 1
+                    answer_index += 1
 
                 if question_text and answer_text:
                     all_questions[question_text] = answer_text
 
-                i = j + 1
+                block_index = answer_index + 1
             else:
-                i += 1
+                block_index += 1
 
     with open('questions.json', 'w', encoding='utf-8') as f:
         json.dump(all_questions, f, ensure_ascii=False, indent=2)
