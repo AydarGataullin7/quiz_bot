@@ -13,7 +13,6 @@ from telegram.ext import (
 )
 from dotenv import load_dotenv
 
-load_dotenv()
 
 TOKEN = os.getenv('TG_TOKEN')
 START, QUESTION = range(2)
@@ -104,4 +103,5 @@ def main():
     updater.idle()
 
 if __name__ == "__main__":
+    load_dotenv()
     main()

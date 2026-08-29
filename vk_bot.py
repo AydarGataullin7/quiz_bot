@@ -8,7 +8,6 @@ from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.utils import get_random_id
 
-load_dotenv()
 TOKEN = os.getenv('VK_TOKEN')
 
 with open('questions.json', 'r', encoding='utf-8') as f:
@@ -114,6 +113,7 @@ def question(event, vk_api):
             )
 
 if __name__ == "__main__":
+    load_dotenv()
     vk_session = vk.VkApi(token=TOKEN)
     vk_api = vk_session.get_api()
     longpoll = VkLongPoll(vk_session)
