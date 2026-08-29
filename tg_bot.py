@@ -14,25 +14,8 @@ from telegram.ext import (
 from dotenv import load_dotenv
 
 
-TOKEN = os.getenv('TG_TOKEN')
 START, QUESTION = range(2)
 
-with open('questions.json', 'r', encoding='utf-8') as f:
-    all_questions = json.load(f)
-questions_list = list(all_questions.items())
-
-custom_keyboard = [
-    ['Новый вопрос', 'Сдаться'],
-    ['Мой счет'],
-]
-reply_markup = ReplyKeyboardMarkup(custom_keyboard)
-
-r = redis.Redis(
-    host='localhost',
-    port=6379,
-    db=0,
-    decode_responses=True,
-)
 
 def start(update: Update, context: CallbackContext):
     update.message.reply_text("Привет! Я бот для викторины", reply_markup=reply_markup)
@@ -82,6 +65,28 @@ def give_up(update: Update, context: CallbackContext):
 
 
 def main():
+    global TOKEN, questions_list, reply_markup, r
+
+    load_dotenv()
+    TOKEN = os.getenv('TG_TOKEN')
+
+    with open('questions.json', 'r', encoding='utf-8') as f:
+        all_questions = json.load(f)
+    questions_list = list(all_questions.items())
+
+    custom_keyboard = [
+        ['Новый вопрос', 'Сдаться'],
+        ['Мой счет'],
+    ]
+    reply_markup = ReplyKeyboardMarkup(custom_keyboard)
+
+    r = redis.Redis(
+        host='localhost',
+        port=6379,
+        db=0,
+        decode_responses=True,
+    )
+
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
         states={
@@ -103,5 +108,4 @@ def main():
     updater.idle()
 
 if __name__ == "__main__":
-    load_dotenv()
     main()

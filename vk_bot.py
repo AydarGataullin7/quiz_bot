@@ -8,18 +8,6 @@ from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.utils import get_random_id
 
-TOKEN = os.getenv('VK_TOKEN')
-
-with open('questions.json', 'r', encoding='utf-8') as f:
-    all_questions = json.load(f)
-questions_list = list(all_questions.items())
-r = redis.Redis(
-    host='localhost',
-    port=6379,
-    db=0,
-    decode_responses=True
-)
-
 def question(event, vk_api):
     user_id = event.user_id
     user_text = event.text
@@ -113,7 +101,18 @@ def question(event, vk_api):
             )
 
 if __name__ == "__main__":
+    global TOKEN, questions_list, r
     load_dotenv()
+    TOKEN = os.getenv('VK_TOKEN')
+    with open('questions.json', 'r', encoding='utf-8') as f:
+        all_questions = json.load(f)
+    questions_list = list(all_questions.items())
+    r = redis.Redis(
+        host='localhost',
+        port=6379,
+        db=0,
+        decode_responses=True
+    )
     vk_session = vk.VkApi(token=TOKEN)
     vk_api = vk_session.get_api()
     longpoll = VkLongPoll(vk_session)
