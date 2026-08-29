@@ -8,97 +8,79 @@ from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.utils import get_random_id
 
-def handle_message(event, vk_api):
-    user_id = event.user_id
-    user_text = event.text
+def send_message(vk_api, user_id, message, keyboard=None):
+    vk_api.messages.send(
+        user_id=user_id,
+        message=message,
+        random_id=random.randint(1, 10000),
+        keyboard=keyboard.get_keyboard() if keyboard else None
+    )
+
+def create_keyboard():
     keyboard = VkKeyboard(one_time=True)
     keyboard.add_button('Новый вопрос', color=VkKeyboardColor.POSITIVE)
     keyboard.add_button('Сдаться', color=VkKeyboardColor.NEGATIVE)
     keyboard.add_line()
     keyboard.add_button('Мой счет', color=VkKeyboardColor.PRIMARY)
+    return keyboard
+
+def handle_start(event, vk_api):
+    keyboard = create_keyboard()
+    send_message(
+        vk_api,
+        event.user_id,
+        'Привет! Чтобы начать нажми "Новый вопрос"',
+        keyboard
+    )
+
+def handle_new_question(event, vk_api, keyboard):
+    user_id = event.user_id
+    random_question = random.choice(questions_list)
+    question_text = random_question[0]
+    answer = random_question[1]
+    r.set(f'user_{user_id}_answer', answer)
+    if '\n' in question_text:
+        question = question_text.split('\n', 1)[1]
+    else:
+        question = question_text
+    send_message(vk_api, user_id, question, keyboard)
+
+def handle_give_up(event, vk_api, keyboard):
+    user_id = event.user_id
+    correct_answer = r.get(f'user_{user_id}_answer')
+    if correct_answer:
+        send_message(vk_api, user_id, f'Правильный ответ: {correct_answer}', keyboard)
+        r.delete(f'user_{user_id}_answer')
+        handle_new_question(event, vk_api, keyboard)
+    else:
+        send_message(vk_api, user_id, 'Нажми "Новый вопрос" чтобы начать', keyboard)
+
+def handle_answer(event, vk_api, keyboard):
+    user_id = event.user_id
+    user_text = event.text
+    saved_answer = r.get(f'user_{user_id}_answer')
+    if saved_answer:
+        if saved_answer.lower().strip().rstrip('.,') == user_text.lower().strip().rstrip('.,'):
+            send_message(vk_api, user_id, 'Правильно! Поздравляю! Для следующего вопроса нажми «Новый вопрос»', keyboard)
+            r.delete(f'user_{user_id}_answer')
+        else:
+            send_message(vk_api, user_id, 'Неправильно... Попробуешь ещё раз?', keyboard)
+    else:
+        send_message(vk_api, user_id, 'Нажми "Новый вопрос" чтобы начать', keyboard)
+
+def handle_message(event, vk_api):
+    user_text = event.text
+    keyboard = create_keyboard()
 
     if user_text == 'Начать':
-        vk_api.messages.send(
-            user_id=event.user_id,
-            random_id=get_random_id(),
-            keyboard=keyboard.get_keyboard(),
-            message='Привет! Чтобы начать нажми "Новый вопрос"'
-        )
-
+        handle_start(event, vk_api)
     elif user_text == 'Новый вопрос':
-        random_question = random.choice(questions_list)
-        question_text = random_question[0]
-        answer = random_question[1]
-        r.set(f'user_{user_id}_answer', answer)
-        if '\n' in question_text:
-            question = question_text.split('\n', 1)[1]
-        else:
-            question = question_text
-        vk_api.messages.send(
-            user_id=event.user_id,
-            message=question,
-            random_id=random.randint(1,10000),
-            keyboard=keyboard.get_keyboard()
-        )
-
+        handle_new_question(event, vk_api, keyboard)
     elif user_text == 'Сдаться':
-        correct_answer = r.get(f'user_{user_id}_answer')
-        if correct_answer:
-            vk_api.messages.send(
-                user_id=event.user_id,
-                message=f'Правильный ответ: {correct_answer}',
-                random_id=random.randint(1,10000),
-                keyboard=keyboard.get_keyboard()
-            )
-            r.delete(f'user_{user_id}_answer')
-
-            random_question = random.choice(questions_list)
-            question_text = random_question[0]
-            answer = random_question[1]
-            r.set(f'user_{user_id}_answer', answer)
-            if '\n' in question_text:
-                question = question_text.split('\n', 1)[1]
-            else:
-                question = question_text
-            vk_api.messages.send(
-                user_id=event.user_id,
-                message=question,
-                random_id=random.randint(1,10000),
-                keyboard=keyboard.get_keyboard()
-            )
-        else:
-            vk_api.messages.send(
-                user_id=event.user_id,
-                message='Нажми "Новый вопрос" чтобы начать',
-                random_id=random.randint(1,10000),
-                keyboard=keyboard.get_keyboard()
-            )
-
+        handle_give_up(event, vk_api, keyboard)
     else:
-        saved_answer = r.get(f'user_{user_id}_answer')
-        if saved_answer:
-            if saved_answer.lower().strip().rstrip('.,') == user_text.lower().strip().rstrip('.,'):
-                vk_api.messages.send(
-                    user_id=event.user_id,
-                    message='Правильно! Поздравляю! Для следующего вопроса нажми «Новый вопрос»',
-                    random_id=random.randint(1,10000),
-                    keyboard=keyboard.get_keyboard()
-                )
-                r.delete(f'user_{user_id}_answer')
-            else:
-                vk_api.messages.send(
-                    user_id=event.user_id,
-                    message='Неправильно... Попробуешь ещё раз?',
-                    random_id=random.randint(1,10000),
-                    keyboard=keyboard.get_keyboard()
-                )
-        else:
-            vk_api.messages.send(
-                user_id=event.user_id,
-                message='Нажми "Новый вопрос" чтобы начать',
-                random_id=random.randint(1,10000),
-                keyboard=keyboard.get_keyboard()
-            )
+        handle_answer(event, vk_api, keyboard)
+
 
 if __name__ == "__main__":
     global TOKEN, questions_list, r
