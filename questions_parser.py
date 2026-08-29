@@ -1,15 +1,42 @@
 import os
 import json
-
-QUESTIONS_FOLDER = r'D:\python_scripts\quiz_bot\questions'
+import argparse  # ← добавляем импорт
 
 
 def main():
-    all_files = os.listdir(QUESTIONS_FOLDER)
+    parser = argparse.ArgumentParser(
+        description="Парсер вопросов из текстовых файлов в JSON."
+    )
+    parser.add_argument(
+        "--folder",
+        "-f",
+        type=str,
+        default=r'D:\python_scripts\quiz_bot\questions',
+        help="Путь к папке с файлами вопросов (по умолчанию: D:\python_scripts\quiz_bot\questions)"
+    )
+    parser.add_argument(
+        "--output",
+        "-o",
+        type=str,
+        default="questions.json",
+        help="Имя выходного JSON-файла (по умолчанию: questions.json)"
+    )
+    args = parser.parse_args()
+
+    questions_folder = args.folder
+    output_file = args.output
+
+    # === Проверка, что папка существует ===
+    if not os.path.exists(questions_folder):
+        print(f"Ошибка: папка '{questions_folder}' не найдена!")
+        return
+
+    # === Основной код парсера ===
+    all_files = os.listdir(questions_folder)
     all_questions = {}
 
     for questions_file in all_files:
-        full_path = QUESTIONS_FOLDER + "\\" + questions_file
+        full_path = os.path.join(questions_folder, questions_file)
         with open(full_path, 'r', encoding='koi8-r') as file:
             content = file.read()
 
@@ -37,11 +64,8 @@ def main():
             else:
                 block_index += 1
 
-    with open('questions.json', 'w', encoding='utf-8') as f:
+    with open(output_file, 'w', encoding='utf-8') as f:
         json.dump(all_questions, f, ensure_ascii=False, indent=2)
-
-    print(f"Найдено вопросов: {len(all_questions)}")
-
 
 if __name__ == "__main__":
     main()
