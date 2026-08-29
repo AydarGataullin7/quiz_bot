@@ -42,7 +42,7 @@ def handle_new_question(event, vk_api, keyboard):
     random_question = random.choice(questions_list)
     question_text = random_question[0]
     answer = random_question[1]
-    r.set(f'user_{user_id}_answer', answer)
+    r.set(f'vk_user_{user_id}_answer', answer)
     if '\n' in question_text:
         question = question_text.split('\n', 1)[1]
     else:
@@ -52,10 +52,10 @@ def handle_new_question(event, vk_api, keyboard):
 
 def handle_give_up(event, vk_api, keyboard):
     user_id = event.user_id
-    correct_answer = r.get(f'user_{user_id}_answer')
+    correct_answer = r.get(f'vk_user_{user_id}_answer')
     if correct_answer:
         send_message(vk_api, user_id, f'Правильный ответ: {correct_answer}', keyboard)
-        r.delete(f'user_{user_id}_answer')
+        r.delete(f'vk_user_{user_id}_answer')
         handle_new_question(event, vk_api, keyboard)
     else:
         send_message(vk_api, user_id, 'Нажми "Новый вопрос" чтобы начать', keyboard)
@@ -64,11 +64,11 @@ def handle_give_up(event, vk_api, keyboard):
 def handle_answer(event, vk_api, keyboard):
     user_id = event.user_id
     user_text = event.text
-    saved_answer = r.get(f'user_{user_id}_answer')
+    saved_answer = r.get(f'vk_user_{user_id}_answer')
     if saved_answer:
         if saved_answer.lower().strip().rstrip('.,') == user_text.lower().strip().rstrip('.,'):
             send_message(vk_api, user_id, 'Правильно! Поздравляю! Для следующего вопроса нажми «Новый вопрос»', keyboard)
-            r.delete(f'user_{user_id}_answer')
+            r.delete(f'vk_user_{user_id}_answer')
         else:
             send_message(vk_api, user_id, 'Неправильно... Попробуешь ещё раз?', keyboard)
     else:

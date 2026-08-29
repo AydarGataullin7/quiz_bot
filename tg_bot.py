@@ -31,7 +31,7 @@ def handle_new_question(update: Update, context: CallbackContext):
     random_question = random.choice(questions_list)
     question_text = random_question[0]
     answer = random_question[1]
-    r.set(f'user_{user_id}_answer', answer)
+    r.set(f'tg_user_{user_id}_answer', answer)
     if '\n' in question_text:
         question = question_text.split('\n', 1)[1]
     else:
@@ -45,12 +45,12 @@ def handle_answer(update: Update, context: CallbackContext):
     if user_text == 'Новый вопрос':
         return handle_new_question(update, context)
     user_id = update.effective_user.id
-    saved_answer = r.get(f'user_{user_id}_answer')
+    saved_answer = r.get(f'tg_user_{user_id}_answer')
     if not saved_answer:
         update.message.reply_text('Нажмите "Новый вопрос"')
     elif saved_answer.lower().strip().rstrip('.,') == user_text.lower().strip().rstrip('.,'):
         update.message.reply_text('Правильно! Поздравляю! Для следующего вопроса нажми «Новый вопрос»')
-        r.delete(f'user_{user_id}_answer')
+        r.delete(f'tg_user_{user_id}_answer')
     else:
         update.message.reply_text('Неправильно... Попробуешь ещё раз?')
     return QUESTION
@@ -58,10 +58,10 @@ def handle_answer(update: Update, context: CallbackContext):
 
 def handle_give_up(update: Update, context: CallbackContext):
     user_id = update.effective_user.id
-    saved_answer = r.get(f'user_{user_id}_answer')
+    saved_answer = r.get(f'tg_user_{user_id}_answer')
     if saved_answer:
         update.message.reply_text(f'Правильный ответ: {saved_answer}')
-        r.delete(f'user_{user_id}_answer')
+        r.delete(f'tg_user_{user_id}_answer')
         update.message.text = 'Новый вопрос'
         return handle_new_question(update, context)
     return QUESTION
