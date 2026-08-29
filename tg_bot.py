@@ -21,6 +21,7 @@ def start(update: Update, context: CallbackContext):
     update.message.reply_text("Привет! Я бот для викторины", reply_markup=reply_markup)
     return START
 
+
 def handle_new_question(update: Update, context: CallbackContext):
     user_text = update.message.text
     if user_text in ['Сдаться', 'Мой счет']:
@@ -38,6 +39,7 @@ def handle_new_question(update: Update, context: CallbackContext):
     update.message.reply_text(question)
     return QUESTION
 
+
 def handle_answer(update: Update, context: CallbackContext):
     user_text = update.message.text
     if user_text == 'Новый вопрос':
@@ -52,6 +54,7 @@ def handle_answer(update: Update, context: CallbackContext):
     else:
         update.message.reply_text('Неправильно... Попробуешь ещё раз?')
     return QUESTION
+
 
 def handle_give_up(update: Update, context: CallbackContext):
     user_id = update.effective_user.id
@@ -106,6 +109,7 @@ def main():
     dispatcher.add_handler(conv_handler)
     updater.start_polling()
     updater.idle()
+
 
 if __name__ == "__main__":
     main()

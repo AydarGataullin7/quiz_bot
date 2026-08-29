@@ -8,6 +8,7 @@ from vk_api.longpoll import VkLongPoll, VkEventType
 from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.utils import get_random_id
 
+
 def send_message(vk_api, user_id, message, keyboard=None):
     vk_api.messages.send(
         user_id=user_id,
@@ -15,6 +16,7 @@ def send_message(vk_api, user_id, message, keyboard=None):
         random_id=random.randint(1, 10000),
         keyboard=keyboard.get_keyboard() if keyboard else None
     )
+
 
 def create_keyboard():
     keyboard = VkKeyboard(one_time=True)
@@ -24,6 +26,7 @@ def create_keyboard():
     keyboard.add_button('Мой счет', color=VkKeyboardColor.PRIMARY)
     return keyboard
 
+
 def handle_start(event, vk_api):
     keyboard = create_keyboard()
     send_message(
@@ -32,6 +35,7 @@ def handle_start(event, vk_api):
         'Привет! Чтобы начать нажми "Новый вопрос"',
         keyboard
     )
+
 
 def handle_new_question(event, vk_api, keyboard):
     user_id = event.user_id
@@ -45,6 +49,7 @@ def handle_new_question(event, vk_api, keyboard):
         question = question_text
     send_message(vk_api, user_id, question, keyboard)
 
+
 def handle_give_up(event, vk_api, keyboard):
     user_id = event.user_id
     correct_answer = r.get(f'user_{user_id}_answer')
@@ -54,6 +59,7 @@ def handle_give_up(event, vk_api, keyboard):
         handle_new_question(event, vk_api, keyboard)
     else:
         send_message(vk_api, user_id, 'Нажми "Новый вопрос" чтобы начать', keyboard)
+
 
 def handle_answer(event, vk_api, keyboard):
     user_id = event.user_id
@@ -67,6 +73,7 @@ def handle_answer(event, vk_api, keyboard):
             send_message(vk_api, user_id, 'Неправильно... Попробуешь ещё раз?', keyboard)
     else:
         send_message(vk_api, user_id, 'Нажми "Новый вопрос" чтобы начать', keyboard)
+
 
 def handle_message(event, vk_api):
     user_text = event.text
