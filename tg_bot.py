@@ -3,7 +3,14 @@ import json
 import random
 import redis
 from telegram import Update, ReplyKeyboardMarkup
-from telegram.ext import Updater, CommandHandler, MessageHandler, Filters, CallbackContext, ConversationHandler
+from telegram.ext import (
+    Updater,
+    CommandHandler,
+    MessageHandler,
+    Filters,
+    CallbackContext,
+    ConversationHandler,
+)
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -15,17 +22,18 @@ with open('questions.json', 'r', encoding='utf-8') as f:
     all_questions = json.load(f)
 questions_list = list(all_questions.items())
 
-custom_keyboard = [['Новый вопрос', 'Сдаться'],
-                   ['Мой счет']]
+custom_keyboard = [
+    ['Новый вопрос', 'Сдаться'],
+    ['Мой счет'],
+]
 reply_markup = ReplyKeyboardMarkup(custom_keyboard)
 
 r = redis.Redis(
     host='localhost',
     port=6379,
     db=0,
-    decode_responses=True
+    decode_responses=True,
 )
-
 
 def start(update: Update, context: CallbackContext):
     update.message.reply_text("Привет! Я бот для викторины", reply_markup=reply_markup)
@@ -36,7 +44,6 @@ def new_question(update: Update, context: CallbackContext):
     if user_text in ['Сдаться', 'Мой счет']:
         update.message.reply_text('Нажмите "Новый вопрос" чтобы начать викторину')
         return START
-
     user_id = update.effective_user.id
     random_question = random.choice(questions_list)
     question_text = random_question[0]
@@ -74,19 +81,22 @@ def give_up(update: Update, context: CallbackContext):
         return new_question(update, context)
     return QUESTION
 
-conv_handler = ConversationHandler(
-    entry_points=[CommandHandler('start', start)],
-    states= {
-        START: [MessageHandler(Filters.regex('^Новый вопрос$'), new_question)],
-        QUESTION: [
-            MessageHandler(Filters.regex('Сдаться'), give_up),
-            MessageHandler(Filters.text & ~Filters.command, check_answer),
-            ],
-    },
-    fallbacks=[CommandHandler('start', start)],
-)
 
 def main():
+    conv_handler = ConversationHandler(
+        entry_points=[CommandHandler('start', start)],
+        states={
+            START: [
+                MessageHandler(Filters.regex('^Новый вопрос$'), new_question),
+            ],
+            QUESTION: [
+                MessageHandler(Filters.regex('Сдаться'), give_up),
+                MessageHandler(Filters.text & ~Filters.command, check_answer),
+            ],
+        },
+        fallbacks=[CommandHandler('start', start)],
+    )
+
     updater = Updater(TOKEN)
     dispatcher = updater.dispatcher
     dispatcher.add_handler(conv_handler)
