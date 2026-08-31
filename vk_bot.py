@@ -11,6 +11,9 @@ from vk_api.utils import get_random_id
 
 load_dotenv()
 TOKEN = os.getenv('VK_TOKEN')
+REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
+REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
+REDIS_DB = int(os.getenv('REDIS_DB', 0))
 
 
 def send_message(vk_api, user_id, message, keyboard=None, questions_list=None, redis_client=None):
@@ -103,9 +106,9 @@ if __name__ == "__main__":
     questions_list = list(all_questions.items())
 
     redis_client = redis.Redis(
-        host='localhost',
-        port=6379,
-        db=0,
+        host=REDIS_HOST,
+        port=REDIS_PORT,
+        db=REDIS_DB,
         decode_responses=True
     )
 
