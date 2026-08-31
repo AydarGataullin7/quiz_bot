@@ -13,6 +13,8 @@ from telegram.ext import (
 )
 from dotenv import load_dotenv
 
+load_dotenv()
+TOKEN = os.getenv('TG_TOKEN')
 
 START, QUESTION = range(2)
 
@@ -73,10 +75,7 @@ def handle_give_up(update: Update, context: CallbackContext):
 
 
 def main():
-    load_dotenv()
-    token = os.getenv('TG_TOKEN')
-
-    if not token:
+    if not TOKEN:
         print("Ошибка: токен не найден! Проверьте файл .env")
         return
 
@@ -128,7 +127,7 @@ def main():
         fallbacks=[CommandHandler('start', start_wrapper)],
     )
 
-    updater = Updater(token)
+    updater = Updater(TOKEN)
     dispatcher = updater.dispatcher
     dispatcher.add_handler(conv_handler)
     updater.start_polling()

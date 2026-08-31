@@ -9,6 +9,10 @@ from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.utils import get_random_id
 
 
+load_dotenv()
+TOKEN = os.getenv('VK_TOKEN')
+
+
 def send_message(vk_api, user_id, message, keyboard=None, questions_list=None, redis_client=None):
     vk_api.messages.send(
         user_id=user_id,
@@ -90,10 +94,7 @@ def handle_message(event, vk_api, questions_list, redis_client):
 
 
 if __name__ == "__main__":
-    load_dotenv()
-    token = os.getenv('VK_TOKEN')
-
-    if not token:
+    if not TOKEN:
         print("Ошибка: токен не найден! Проверьте файл .env")
         exit()
 
@@ -108,7 +109,7 @@ if __name__ == "__main__":
         decode_responses=True
     )
 
-    vk_session = vk.VkApi(token=token)
+    vk_session = vk.VkApi(token=TOKEN)
     vk_api = vk_session.get_api()
     longpoll = VkLongPoll(vk_session)
     for event in longpoll.listen():
