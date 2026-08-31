@@ -9,7 +9,7 @@ from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.utils import get_random_id
 
 
-def send_message(vk_api, user_id, message, keyboard=None, questions_list=None, r=None):
+def send_message(vk_api, user_id, message, keyboard=None, questions_list=None, redis_client=None):
     vk_api.messages.send(
         user_id=user_id,
         message=message,
@@ -37,12 +37,12 @@ def handle_start(event, vk_api):
     )
 
 
-def handle_new_question(event, vk_api, keyboard, questions_list, r):
+def handle_new_question(event, vk_api, keyboard, questions_list, redis_client):
     user_id = event.user_id
     random_question = random.choice(questions_list)
     question_text = random_question[0]
     answer = random_question[1]
-    r.set(f'vk_user_{user_id}_answer', answer)
+    redis_client.set(f'vk_user_{user_id}_answer', answer)
     if '\n' in question_text:
         question = question_text.split('\n', 1)[1]
     else:
@@ -50,43 +50,43 @@ def handle_new_question(event, vk_api, keyboard, questions_list, r):
     send_message(vk_api, user_id, question, keyboard)
 
 
-def handle_give_up(event, vk_api, keyboard, questions_list, r):
+def handle_give_up(event, vk_api, keyboard, questions_list, redis_client):
     user_id = event.user_id
-    correct_answer = r.get(f'vk_user_{user_id}_answer')
+    correct_answer = redis_client.get(f'vk_user_{user_id}_answer')
     if correct_answer:
         send_message(vk_api, user_id, f'Правильный ответ: {correct_answer}', keyboard)
-        r.delete(f'vk_user_{user_id}_answer')
-        handle_new_question(event, vk_api, keyboard, questions_list, r)
+        redis_client.delete(f'vk_user_{user_id}_answer')
+        handle_new_question(event, vk_api, keyboard, questions_list, redis_client)
     else:
         send_message(vk_api, user_id, 'Нажми "Новый вопрос" чтобы начать', keyboard)
 
 
-def handle_answer(event, vk_api, keyboard, r):
+def handle_answer(event, vk_api, keyboard, redis_client):
     user_id = event.user_id
     user_text = event.text
-    saved_answer = r.get(f'vk_user_{user_id}_answer')
+    saved_answer = redis_client.get(f'vk_user_{user_id}_answer')
     if saved_answer:
         if saved_answer.lower().strip().rstrip('.,') == user_text.lower().strip().rstrip('.,'):
             send_message(vk_api, user_id, 'Правильно! Поздравляю! Для следующего вопроса нажми «Новый вопрос»', keyboard)
-            r.delete(f'vk_user_{user_id}_answer')
+            redis_client.delete(f'vk_user_{user_id}_answer')
         else:
             send_message(vk_api, user_id, 'Неправильно... Попробуешь ещё раз?', keyboard)
     else:
         send_message(vk_api, user_id, 'Нажми "Новый вопрос" чтобы начать', keyboard)
 
 
-def handle_message(event, vk_api, questions_list, r):
+def handle_message(event, vk_api, questions_list, redis_client):
     user_text = event.text
     keyboard = create_keyboard()
 
     if user_text == 'Начать':
         handle_start(event, vk_api)
     elif user_text == 'Новый вопрос':
-        handle_new_question(event, vk_api, keyboard, questions_list, r)
+        handle_new_question(event, vk_api, keyboard, questions_list, redis_client)
     elif user_text == 'Сдаться':
-        handle_give_up(event, vk_api, keyboard, questions_list, r)
+        handle_give_up(event, vk_api, keyboard, questions_list, redis_client)
     else:
-        handle_answer(event, vk_api, keyboard, r)
+        handle_answer(event, vk_api, keyboard, redis_client)
 
 
 if __name__ == "__main__":
@@ -100,7 +100,8 @@ if __name__ == "__main__":
     with open('questions.json', 'r', encoding='utf-8') as f:
         all_questions = json.load(f)
     questions_list = list(all_questions.items())
-    r = redis.Redis(
+
+    redis_client = redis.Redis(
         host='localhost',
         port=6379,
         db=0,
@@ -112,4 +113,4 @@ if __name__ == "__main__":
     longpoll = VkLongPoll(vk_session)
     for event in longpoll.listen():
         if event.type == VkEventType.MESSAGE_NEW and event.to_me:
-            handle_message(event, vk_api, questions_list, r)
+            handle_message(event, vk_api, questions_list, redis_client)

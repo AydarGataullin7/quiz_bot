@@ -30,11 +30,11 @@ def handle_new_question(update: Update, context: CallbackContext):
         return START
     user_id = update.effective_user.id
     questions_list = context.bot_data.get('questions_list')
-    r = context.bot_data.get('redis')
+    redis_client = context.bot_data.get('redis_client')
     random_question = random.choice(questions_list)
     question_text = random_question[0]
     answer = random_question[1]
-    r.set(f'tg_user_{user_id}_answer', answer)
+    redis_client.set(f'tg_user_{user_id}_answer', answer)
     if '\n' in question_text:
         question = question_text.split('\n', 1)[1]
     else:
@@ -48,13 +48,13 @@ def handle_answer(update: Update, context: CallbackContext):
     if user_text == 'Новый вопрос':
         return handle_new_question(update, context)
     user_id = update.effective_user.id
-    r = context.bot_data.get('redis')
-    saved_answer = r.get(f'tg_user_{user_id}_answer')
+    redis_client = context.bot_data.get('redis_client')
+    saved_answer = redis_client.get(f'tg_user_{user_id}_answer')
     if not saved_answer:
         update.message.reply_text('Нажмите "Новый вопрос"')
     elif saved_answer.lower().strip().rstrip('.,') == user_text.lower().strip().rstrip('.,'):
         update.message.reply_text('Правильно! Поздравляю! Для следующего вопроса нажми «Новый вопрос»')
-        r.delete(f'tg_user_{user_id}_answer')
+        redis_client.delete(f'tg_user_{user_id}_answer')
     else:
         update.message.reply_text('Неправильно... Попробуешь ещё раз?')
     return QUESTION
@@ -62,11 +62,11 @@ def handle_answer(update: Update, context: CallbackContext):
 
 def handle_give_up(update: Update, context: CallbackContext):
     user_id = update.effective_user.id
-    r = context.bot_data.get('redis')
-    saved_answer = r.get(f'tg_user_{user_id}_answer')
+    redis_client = context.bot_data.get('redis_client')
+    saved_answer = redis_client.get(f'tg_user_{user_id}_answer')
     if saved_answer:
         update.message.reply_text(f'Правильный ответ: {saved_answer}')
-        r.delete(f'tg_user_{user_id}_answer')
+        redis_client.delete(f'tg_user_{user_id}_answer')
         update.message.text = 'Новый вопрос'
         return handle_new_question(update, context)
     return QUESTION
@@ -90,7 +90,7 @@ def main():
     ]
     reply_markup = ReplyKeyboardMarkup(custom_keyboard)
 
-    r = redis.Redis(
+    redis_client = redis.Redis(
         host='localhost',
         port=6379,
         db=0,
@@ -103,15 +103,15 @@ def main():
 
     def new_question_wrapper(update: Update, context: CallbackContext):
         context.bot_data['questions_list'] = questions_list
-        context.bot_data['redis'] = r
+        context.bot_data['redis_client'] = redis_client
         return handle_new_question(update, context)
 
     def answer_wrapper(update: Update, context: CallbackContext):
-        context.bot_data['redis'] = r
+        context.bot_data['redis_client'] = redis_client
         return handle_answer(update, context)
 
     def give_up_wrapper(update: Update, context: CallbackContext):
-        context.bot_data['redis'] = r
+        context.bot_data['redis_client'] = redis_client
         return handle_give_up(update, context)
 
     conv_handler = ConversationHandler(
