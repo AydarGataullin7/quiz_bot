@@ -14,12 +14,6 @@ from telegram.ext import (
 from dotenv import load_dotenv
 
 
-load_dotenv()
-TOKEN = os.getenv('TG_TOKEN')
-REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
-REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
-REDIS_DB = int(os.getenv('REDIS_DB', 0))
-
 START, QUESTION = range(2)
 
 
@@ -79,7 +73,13 @@ def handle_give_up(update: Update, context: CallbackContext):
 
 
 def main():
-    if not TOKEN:
+    load_dotenv()
+    token = os.getenv('TG_TOKEN')
+    redis_host = os.getenv('REDIS_HOST', 'localhost')
+    redis_port = int(os.getenv('REDIS_PORT', 6379))
+    redis_db = int(os.getenv('REDIS_DB', 0))
+
+    if not token:
         print("Ошибка: токен не найден! Проверьте файл .env")
         return
 
@@ -94,9 +94,9 @@ def main():
     reply_markup = ReplyKeyboardMarkup(custom_keyboard)
 
     redis_client = redis.Redis(
-        host=REDIS_HOST,
-        port=REDIS_PORT,
-        db=REDIS_DB,
+        host=redis_host,
+        port=redis_port,
+        db=redis_db,
         decode_responses=True,
     )
 
@@ -131,7 +131,7 @@ def main():
         fallbacks=[CommandHandler('start', start_wrapper)],
     )
 
-    updater = Updater(TOKEN)
+    updater = Updater(token)
     dispatcher = updater.dispatcher
     dispatcher.add_handler(conv_handler)
     updater.start_polling()

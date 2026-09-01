@@ -9,13 +9,6 @@ from vk_api.keyboard import VkKeyboard, VkKeyboardColor
 from vk_api.utils import get_random_id
 
 
-load_dotenv()
-TOKEN = os.getenv('VK_TOKEN')
-REDIS_HOST = os.getenv('REDIS_HOST', 'localhost')
-REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
-REDIS_DB = int(os.getenv('REDIS_DB', 0))
-
-
 def send_message(vk_api, user_id, message, keyboard=None, questions_list=None, redis_client=None):
     vk_api.messages.send(
         user_id=user_id,
@@ -97,7 +90,13 @@ def handle_message(event, vk_api, questions_list, redis_client):
 
 
 if __name__ == "__main__":
-    if not TOKEN:
+    load_dotenv()
+    token = os.getenv('VK_TOKEN')
+    redis_host = os.getenv('REDIS_HOST', 'localhost')
+    redis_port = int(os.getenv('REDIS_PORT', 6379))
+    redis_db = int(os.getenv('REDIS_DB', 0))
+
+    if not token:
         print("Ошибка: токен не найден! Проверьте файл .env")
         exit()
 
@@ -106,15 +105,16 @@ if __name__ == "__main__":
     questions_list = list(all_questions.items())
 
     redis_client = redis.Redis(
-        host=REDIS_HOST,
-        port=REDIS_PORT,
-        db=REDIS_DB,
+        host=redis_host,
+        port=redis_port,
+        db=redis_db,
         decode_responses=True
     )
 
-    vk_session = vk.VkApi(token=TOKEN)
+    vk_session = vk.VkApi(token=token)
     vk_api = vk_session.get_api()
     longpoll = VkLongPoll(vk_session)
+
     for event in longpoll.listen():
         if event.type == VkEventType.MESSAGE_NEW and event.to_me:
             handle_message(event, vk_api, questions_list, redis_client)
